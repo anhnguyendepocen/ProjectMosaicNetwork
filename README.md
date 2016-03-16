@@ -47,15 +47,27 @@ depts <- c("Economics",
 "Nursing",
 "Public Health")
 
-socsci <- subset(rawfile, University == "UNCC" & (Department %in% depts))
+colleges <- c("Liberal Arts & Sciences",
+           "CHHS",
+           "Education",
+           "Business")
 
-aggtemp <- socsci %>% group_by(College, Department) %>% summarise(number = n()) 
+socsci_articles <- subset(rawfile, University == "UNCC" & (Department %in% depts) & (College %in% colleges))
+
+socsci_key <- unique(socsci_articles$ID)
+
+uncc_articles <- subset(rawfile, University == "UNCC")
+
+subsets <- subset(uncc_articles, ID %in% socsci_key)
+
+aggtemp <- subsets %>% group_by(College, Department) %>% summarise(number = n()) 
 
 # Save Article ID, Standardized Author and Department
-socsci <- socsci[,c(2,4,7,8)]
+socsci <- subsets[,c(2,4,7,8)]
 
-socsci$College[socsci$Department %in% c('Public Health','Social Work','Nursing')] <- "CHHS"
-socsci$College[socsci$College == "Not UNCC"] <- "Liberal Arts & Sciences"
+socsci$Department[socsci$Department %in% c('UNCC (No Department Listed)','Other')] <- "Missing"
+socsci$College[socsci$College == "Not UNCC"] <- "Missing"
+socsci$College[socsci$College == "Other"] <- "Missing"
 
 aggclean <- socsci %>% group_by(StandardAuthor, Department, College) %>% summarise(number = n()) 
 
@@ -176,7 +188,10 @@ V(g)$color=gsub("Liberal Arts & Sciences","red",V(g)$color)
 V(g)$color=gsub("CHHS","blue",V(g)$color)
 V(g)$color=gsub("Business","green",V(g)$color)
 V(g)$color=gsub("Education","yellow",V(g)$color)
-
+V(g)$color=gsub("Missing","gray",V(g)$color)
+V(g)$color=gsub("Engineering","orange",V(g)$color)
+V(g)$color=gsub("Architecture","violet",V(g)$color)
+V(g)$color=gsub("Computing & Informatics","brown",V(g)$color)
 
 ## Plot
 plot(g, layout=co, 
@@ -186,8 +201,12 @@ plot(g, layout=co,
 legend(x=-1.2, y=-0.6, c("Liberal Arts & Sciences",
                          "CHHS",
                          "Business",
-                         "Education"), pch=21,
-       col="#777777", pt.bg=c("red","blue","green","yellow"), pt.cex=1, cex=.6, bty="n", ncol=1)
+                         "Education",
+                         "Missing",
+                         "Engineering",
+                         "Architecture",
+                         "CIS"), pch=21,
+       col="#777777", pt.bg=c("red","blue","green","yellow","gray","orange","violet","brown"), pt.cex=1, cex=.6, bty="n", ncol=1)
 
 
 dd <- degree.distribution(g, cumulative=T, mode="all")
